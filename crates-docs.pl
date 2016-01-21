@@ -161,7 +161,7 @@ sub copy_doc {
 
     };
 
-    find($copy, $source);
+    find($copy, $source) if -e $source;
 }
 
 
@@ -232,13 +232,14 @@ sub build_doc_for_version {
     }
 
     # If everything goes fine move generated documentation into public_html
-    make_path($FindBin::Bin . '/public_html/crates/' . $crate);
 
     # Remove old documentation for same version just in case
     debug("Removing old documentation in public_html/crates", 1);
     msg((run_('rm', '-rf',
              $FindBin::Bin . '/public_html/crates/' .
              $crate . '/' . $version))[0], 1);
+
+    make_path($FindBin::Bin . '/public_html/crates/' . $crate . '/' . $version);
 
     msg("Moving documentation into: " .
         $FindBin::Bin . '/public_html/crates/' .
