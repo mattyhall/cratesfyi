@@ -27,15 +27,19 @@ use File::Path qw/make_path/;
 use IPC::Cmd qw/run/;
 use FindBin;
 use JSON;
-use Config::INI::Reader;
-use Log::Message::Simple qw/msg error/;
+use File::Slurp;
+use TOML qw/from_toml/;
+use Log::Message::Simple qw/msg error debug/;
 use Data::Dumper;
+use Cwd;
 
 
 # FIXME: This is a sad function. I kept editing until I got this monster
 sub run_ {
+    my $cmd = join(' ', @_);
+    debug("Running command: $cmd in " . cwd(), 1);
     my($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) =
-            run(command => join(' ', @_), verbose => 0);
+            run(command => $cmd, verbose => 0);
     return (join("", @{$full_buf}), defined($success));
 }
 
@@ -44,13 +48,46 @@ sub run_ {
 # This deps are defined with a path in Cargo.toml
 sub download_dependencies {
     my $package_root = $_[0];
-    my $toml = Config::INI::Reader->read_file($package_root . '/Cargo.toml');
+    my $toml_content = read_file($package_root . '/Cargo.toml');
+    my $toml = from_toml($toml_content);
 
-    for (keys(%{$toml})) {
-        if ($_ =~ /^dependencies\.(.*?)$/ && defined($toml->{$_}->{'path'})) {
-            # TODO: I was doing stuff here
-            print "$_\n";
+    msg("Checking local dependencies of $toml->{package}->{name}", 1);
 
+    for (keys(%{$toml->{dependencies}})) {
+        if (ref($toml->{dependencies}->{$_}) eq 'HASH' &&
+            defined($toml->{dependencies}->{$_}->{path})) {
+
+            my $crate = $_;
+            my $version = $toml->{dependencies}->{$_}->{version};
+            my $path = $toml->{dependencies}->{$_}->{'path'};
+
+            msg("Downloading dependency $crate-$version", 1);
+            my $url = "https://crates-io.s3-us-west-1.amazonaws.com/crates/" .
+                      "$crate/$crate-$version.crate";
+            my @wget_output = run_('wget', '-c', '--content-disposition',
+                                   $url);
+            msg($wget_output[0], 1);
+            die "Unable to download $crate from $url\n"
+                unless ($wget_output[1]);
+
+            # Extract crate into package root
+            msg("Extracting $crate-$version.crate " .
+                "into: $package_root", 1);
+            msg((run_('tar',
+                      '-C', $package_root,
+                      '-xzvf', "$crate-$version.crate"))[0], 1);
+
+            # Move crate into right place
+            msg("Moving crate into $path", 1);
+            msg((run_('mv', '-v',
+                      $package_root . "/$crate-$version",
+                      $package_root . "/$path"))[0], 1);
+
+            msg("Removing $crate-$version.crate", 1);
+            msg((run_('rm', '-v', "$crate-$version.crate"))[0], 1);
+
+            # Check dependencies of downloaded crate
+            download_dependencies($package_root . "/$path");
         }
     }
 
@@ -109,6 +146,7 @@ sub build_doc_for_version {
     open my $logfh, '>' . $FindBin::Bin . "/logs/$crate-$version.log";
     local $Log::Message::Simple::MSG_FH = \*$logfh;
     local $Log::Message::Simple::ERROR_FH = \*$logfh;
+    local $Log::Message::Simple::DEBUG_FH = \*$logfh;
 
     msg("Building documentation for crate: $crate-$version", 1);
 
@@ -148,6 +186,8 @@ sub build_doc_for_version {
               '-C', $FindBin::Bin . '/build_home',
               '-xzvf', "$crate-$version.crate"))[0], 1);
 
+    download_dependencies($FindBin::Bin . '/build_home/' . "$crate-$version");
+
     # Build file
     msg("Running cargo doc --no-deps in " .
         "chroot:/home/onur/$crate-$version", 1);
@@ -166,6 +206,7 @@ sub build_doc_for_version {
     mkdir($FindBin::Bin . '/public_html/' . $crate);
 
     # Remove old documentation for same version just in case
+    debug("Removing old documentation in public_html", 1);
     msg((run_('rm', '-rf',
              $FindBin::Bin . '/public_html/' .
              $crate . '/' . $version))[0], 1);
@@ -232,5 +273,5 @@ sub build_doc_for_crate {
 }
 
 
-#build_doc_for_crate('sdl2');
-download_dependencies('/tmp/sdl2-0.13.0');
+build_doc_for_crate('sdl2');
+#download_dependencies('/tmp/sdl2-0.13.0');
