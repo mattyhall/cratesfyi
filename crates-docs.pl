@@ -152,6 +152,8 @@ sub copy_doc {
                     $_ =~ s/href='(.*?)\.\.\/src\/[\w-]+\//href='$1src\//g;
                 } elsif (/href='.*?\.\.\/[\w_-]+/) {
                     $_ =~ s/href='(.*?)\.\.\/[\w_-]+\//href='$1/g;
+                } elsif (/window.rootPath = "(.*?)\.\.\//) {
+                    $_ =~ s/window.rootPath = "(.*?)\.\.\//window.rootPath = "$1/g;
                 }
             }
 
