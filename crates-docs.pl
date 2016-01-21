@@ -28,6 +28,7 @@ use IPC::Cmd qw/run/;
 use FindBin;
 use JSON;
 use Config::INI::Reader;
+use Log::Message::Simple qw/msg error/;
 use Data::Dumper;
 
 
@@ -106,25 +107,28 @@ sub build_doc_for_version {
 
     # Opening log file
     open my $logfh, '>' . $FindBin::Bin . "/logs/$crate-$version.log";
+    local $Log::Message::Simple::MSG_FH = \*$logfh;
+    local $Log::Message::Simple::ERROR_FH = \*$logfh;
+
+    msg("Building documentation for crate: $crate-$version", 1);
 
     my $clean_package = sub {
 
-        print $logfh "Cleaning $crate-$version\n";
-        print $logfh (run_('sudo', 'chroot', $FindBin::Bin . '/chroot',
-                           'su', '-', 'onur',
-                           '/home/onur/build.sh', 'clean',
-                           "$crate-$version"))[0];
+        msg("Cleaning $crate-$version", 1);
+        msg((run_('sudo', 'chroot', $FindBin::Bin . '/chroot',
+                          'su', '-', 'onur',
+                          '/home/onur/build.sh', 'clean',
+                          "$crate-$version"))[0], 1);
 
-        print $logfh "Removing $crate-$version build directory\n";
-        print $logfh (run_('rm', '-rf',
-                           $FindBin::Bin . "/build_home/$crate-$version"))[0];
+        msg("Removing $crate-$version build directory", 1);
+        msg((run_('rm', '-rf',
+                        $FindBin::Bin . "/build_home/$crate-$version"))[0], 1);
 
-        print $logfh "Removing crate file $crate-$version.crate\n";
-        print $logfh (run_('rm', '-fv', "$crate-$version.crate"))[0];
+        msg("Removing crate file $crate-$version.crate", 1);
+        msg((run_('rm', '-fv', "$crate-$version.crate"))[0], 1);
 
     };
 
-    print $logfh "Building documentation for crate: $crate-$version\n";
 
     # Default crate url is:
     # https://crates.io/api/v1/crates/$crate/$version/download
@@ -132,28 +136,28 @@ sub build_doc_for_version {
     # downloading alot during development. I am simply using redirected url
     my $url = "https://crates-io.s3-us-west-1.amazonaws.com/crates/" .
               "$crate/$crate-$version.crate";
-    print $logfh "Downloading $crate-$version.crate\n";
+    msg("Downloading $crate-$version.crate", 1);
     my @wget_output = run_('wget', '-c', '--content-disposition', $url);
-    print $logfh $wget_output[0];
+    msg($wget_output[0], 1);
     die "Unable to download $crate from $url\n" unless ($wget_output[1]);
 
     # Extract crate file into build_home
-    print $logfh "Extracting $crate-$version.crate " .
-                 "into: $FindBin::Bin/build_home\n";
-    print $logfh (run_('tar',
-                       '-C', $FindBin::Bin . '/build_home',
-                       '-xzvf', "$crate-$version.crate"))[0];
+    msg("Extracting $crate-$version.crate " .
+        "into: $FindBin::Bin/build_home", 1);
+    msg((run_('tar',
+              '-C', $FindBin::Bin . '/build_home',
+              '-xzvf', "$crate-$version.crate"))[0], 1);
 
     # Build file
-    print $logfh "Running cargo doc --no-deps in " .
-                 "chroot:/home/onur/$crate-$version\n";
+    msg("Running cargo doc --no-deps in " .
+        "chroot:/home/onur/$crate-$version", 1);
 
     my @build_output = run_('sudo', 'chroot', $FindBin::Bin . '/chroot',
                             'su', '-', 'onur',
                             '/home/onur/build.sh', 'build', "$crate-$version");
-    print $logfh $build_output[0];
+    msg($build_output[0], 1);
     unless ($build_output[1]) {
-        print $logfh "Building documentation for $crate-$version failed\n";
+        error("Building documentation for $crate-$version failed", 1);
         $clean_package->();
         return;
     }
@@ -162,23 +166,23 @@ sub build_doc_for_version {
     mkdir($FindBin::Bin . '/public_html/' . $crate);
 
     # Remove old documentation for same version just in case
-    print $logfh (run_('rm', '-rf',
-                       $FindBin::Bin . '/public_html/' .
-                       $crate . '/' . $version))[0];
+    msg((run_('rm', '-rf',
+             $FindBin::Bin . '/public_html/' .
+             $crate . '/' . $version))[0], 1);
 
-    print $logfh "Moving documentation into: " .
-                 $FindBin::Bin . '/public_html/' .
-                 $crate . '/' . $version . "\n";
+    msg("Moving documentation into: " .
+        $FindBin::Bin . '/public_html/' .
+        $crate . '/' . $version, 1);
     my $crate_dname = $crate; $crate_dname =~ s/-/_/g;
     copy_doc($FindBin::Bin .
                 "/build_home/$crate-$version/target/doc/$crate_dname",
              $FindBin::Bin . '/public_html/' . $crate . '/' . $version);
     # and copy search-index.js
-    print $logfh (run_('cp', '-v',
-                       $FindBin::Bin . "/build_home/$crate-$version" .
-                                       "/target/doc/search-index.js",
-                       $FindBin::Bin . '/public_html/' .
-                                       $crate . '/' . $version))[0];
+    msg((run_('cp', '-v',
+              $FindBin::Bin . "/build_home/$crate-$version" .
+              "/target/doc/search-index.js",
+              $FindBin::Bin . '/public_html/' .
+              $crate . '/' . $version))[0], 1);
 
     $clean_package->();
 
@@ -216,9 +220,9 @@ sub build_doc_for_crate {
         close $fh;
 
         # Build doc for latest version
-        for (@versions) {
-            build_doc_for_version($crate, $_->{vers});
-        }
+        #for (@versions) {
+        #    build_doc_for_version($crate, $_->{vers});
+        #}
 
         build_doc_for_version($crate, $versions[-1]->{vers});
     };
