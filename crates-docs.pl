@@ -170,7 +170,8 @@ sub build_doc_for_version {
     my ($crate, $version) = @_;
 
     # Opening log file
-    open my $logfh, '>' . $FindBin::Bin . "/logs/$crate-$version.log";
+    make_path($FindBin::Bin . "/logs/$crate");
+    open my $logfh, '>' . $FindBin::Bin . "/logs/$crate/$crate-$version.log";
     local $Log::Message::Simple::MSG_FH = \*$logfh;
     local $Log::Message::Simple::ERROR_FH = \*$logfh;
     local $Log::Message::Simple::DEBUG_FH = \*$logfh;
