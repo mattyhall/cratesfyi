@@ -17,8 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.  #
 ##########################################################################
 
-# TODO:
-# * Handle path dependencies
 
 use strict;
 use warnings;
@@ -32,6 +30,33 @@ use TOML qw/from_toml/;
 use Log::Message::Simple qw/msg error debug/;
 use Data::Dumper;
 use Cwd;
+use Getopt::Long;
+use Pod::Usage;
+
+
+=pod
+
+=head1 NAME
+
+create-docs.pl - Central documentation repository for L<https://crates.io>
+
+=head1 SYNOPSIS
+
+./crate-docs.pl -b I<package>
+
+=head1 ARGS
+
+=over
+
+=item B<-b, --build-documentation> I<package>
+
+Builds documentation of a package. If no package provided, script will
+try to build documentation for all crates.
+
+=back
+
+=cut
+
 
 
 # FIXME: This is a sad function. I kept editing until I got this monster
@@ -150,7 +175,8 @@ sub build_doc_for_version {
     local $Log::Message::Simple::ERROR_FH = \*$logfh;
     local $Log::Message::Simple::DEBUG_FH = \*$logfh;
 
-    msg("Building documentation for crate: $crate-$version", 1);
+    print "Building documentation for: $crate-$version\n";
+    msg("Building documentation for: $crate-$version", 1);
 
     my $clean_package = sub {
 
@@ -221,6 +247,7 @@ sub build_doc_for_version {
                 "/build_home/$crate-$version/target/doc/$crate_dname",
              $FindBin::Bin . '/public_html/' . $crate . '/' . $version);
     # Copy source as well
+    # FIXME: 80+
     copy_doc($FindBin::Bin . "/build_home/$crate-$version/target/doc/src/$crate_dname",
              $FindBin::Bin . '/public_html/' . $crate . '/' . $version . '/src');
     # and copy search-index.js
@@ -239,7 +266,7 @@ sub build_doc_for_version {
 # If you call this function with a crate name, it'll only generate docs for
 # that crate.
 sub build_doc_for_crate {
-    my $requested_crate = $_[0];
+    my ($requested_crate, $requested_version) = @_;
 
     my $wanted = sub {
 
@@ -265,12 +292,25 @@ sub build_doc_for_crate {
         push @versions, decode_json($_) while (<$fh>);
         close $fh;
 
-        # Build doc for latest version
-        #for (@versions) {
-        #    build_doc_for_version($crate, $_->{vers});
-        #}
 
-        build_doc_for_version($crate, $versions[-1]->{vers});
+
+
+        my $found = 0;
+        for (reverse(@versions)) {
+            if (defined($requested_version)) {
+                if ($_->{vers} eq $requested_version) {
+                    build_doc_for_version($crate, $_->{vers});
+                    $found = 1;
+                }
+            } else {
+                $found = 1;
+                build_doc_for_version($crate, $_->{vers});
+            }
+        }
+
+        print "$crate-$requested_version is not available in crates.io-index\n"
+            unless $found;
+
     };
 
     find($wanted, 'crates.io-index');
@@ -278,5 +318,38 @@ sub build_doc_for_crate {
 }
 
 
-build_doc_for_crate('sdl2');
-#download_dependencies('/tmp/sdl2-0.13.0');
+sub main {
+
+    my $help = sub {
+        pod2usage(-verbose  => 2,
+                  -sections => [qw/SYNOPSIS ARGS/]);
+    };
+
+    my $actions = {
+        build_docs => '',
+        packages => [],
+        version => undef,
+    };
+
+    GetOptions(
+        'build-documentation|b@' => \$actions->{build_docs},
+        '<>' => sub { push(@{$actions->{packages}}, $_[0]) },
+        'version|v=s' => \$actions->{version},
+        'help|h' => $help
+    );
+
+    if ($actions->{build_docs}) {
+        if (scalar(@{$actions->{packages}})) {
+            build_doc_for_crate($_, $actions->{version})
+                for (@{$actions->{packages}});
+        } else {
+            build_doc_for_crate();
+        }
+    } else {
+        $help->();
+    }
+
+}
+
+
+&main();
