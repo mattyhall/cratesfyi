@@ -18,6 +18,19 @@
 ##########################################################################
 
 
+# TODO:
+# * Don't die if download fails
+# * Some of the local dependency crates are using asterix for version.
+#   I need to get latest version of crate.
+# * bindgen crate failed to build because there was no libclang.so
+#   available.
+# * Left column is not visible on crate index. No idea why. Need to fix
+#   this.
+# * This script is becoming hard to maintain. Need more comments in base
+#   functions.
+# * Add global options for prefix and log folder.
+
+
 use strict;
 use warnings;
 use File::Find;
