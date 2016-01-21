@@ -150,6 +150,8 @@ sub copy_doc {
                     $_ =~ s/src="(.*\.js)"/src="..\/$1"/;
                 } elsif (/href='.*?\.\.\/src/) {
                     $_ =~ s/href='(.*?)\.\.\/src\/[\w-]+\//href='$1src\//g;
+                } elsif (/href='.*?\.\.\/[\w_-]+/) {
+                    $_ =~ s/href='(.*?)\.\.\/[\w_-]+\//href='$1/g;
                 }
             }
 
