@@ -107,7 +107,7 @@ sub copy_doc {
 
         my $dir = $File::Find::dir;
         # FIXME: crate name assumption
-        $dir =~ s/.*target\/doc\/[\w-]+//;
+        $dir =~ s/.*target\/doc\/(src\/)*[\w-]+//;
         make_path($dest . $dir);
         return if -d $_;
 
@@ -123,6 +123,8 @@ sub copy_doc {
                     $_ =~ s/src="\.\.\/(.*\.js)"/src="$1"/;
                 } elsif (/<script.*src=".*(jquery|main|playpen)\.js"/) {
                     $_ =~ s/src="(.*\.js)"/src="..\/$1"/;
+                } elsif (/href='.*?\.\.\/src/) {
+                    $_ =~ s/href='(.*?)\.\.\/src\/[\w-]+\//href='$1src\//g;
                 }
             }
 
@@ -218,6 +220,9 @@ sub build_doc_for_version {
     copy_doc($FindBin::Bin .
                 "/build_home/$crate-$version/target/doc/$crate_dname",
              $FindBin::Bin . '/public_html/' . $crate . '/' . $version);
+    # Copy source as well
+    copy_doc($FindBin::Bin . "/build_home/$crate-$version/target/doc/src/$crate_dname",
+             $FindBin::Bin . '/public_html/' . $crate . '/' . $version . '/src');
     # and copy search-index.js
     msg((run_('cp', '-v',
               $FindBin::Bin . "/build_home/$crate-$version" .
