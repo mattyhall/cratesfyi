@@ -231,30 +231,30 @@ sub build_doc_for_version {
     }
 
     # If everything goes fine move generated documentation into public_html
-    mkdir($FindBin::Bin . '/public_html/' . $crate);
+    make_path($FindBin::Bin . '/public_html/crates/' . $crate);
 
     # Remove old documentation for same version just in case
-    debug("Removing old documentation in public_html", 1);
+    debug("Removing old documentation in public_html/crates", 1);
     msg((run_('rm', '-rf',
-             $FindBin::Bin . '/public_html/' .
+             $FindBin::Bin . '/public_html/crates/' .
              $crate . '/' . $version))[0], 1);
 
     msg("Moving documentation into: " .
-        $FindBin::Bin . '/public_html/' .
+        $FindBin::Bin . '/public_html/crates/' .
         $crate . '/' . $version, 1);
     my $crate_dname = $crate; $crate_dname =~ s/-/_/g;
     copy_doc($FindBin::Bin .
                 "/build_home/$crate-$version/target/doc/$crate_dname",
-             $FindBin::Bin . '/public_html/' . $crate . '/' . $version);
+             $FindBin::Bin . '/public_html/crates/' . $crate . '/' . $version);
     # Copy source as well
     # FIXME: 80+
     copy_doc($FindBin::Bin . "/build_home/$crate-$version/target/doc/src/$crate_dname",
-             $FindBin::Bin . '/public_html/' . $crate . '/' . $version . '/src');
+             $FindBin::Bin . '/public_html/crates/' . $crate . '/' . $version . '/src');
     # and copy search-index.js
     msg((run_('cp', '-v',
               $FindBin::Bin . "/build_home/$crate-$version" .
               "/target/doc/search-index.js",
-              $FindBin::Bin . '/public_html/' .
+              $FindBin::Bin . '/public_html/crates/' .
               $crate . '/' . $version))[0], 1);
 
     $clean_package->();
