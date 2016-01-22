@@ -450,6 +450,8 @@ sub main {
 
 0;
 
+=encoding utf8
+
 =head1 NAME
 
 creates-docs.pl - L<https://crates.io> documentation generator
