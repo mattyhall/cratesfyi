@@ -59,27 +59,53 @@ my %OPTIONS = (
 
 =head1 NAME
 
-create-docs.pl - Central documentation repository for L<https://crates.io>
+create-docs.pl - L<https://crates.io> documentation generator
 
 =head1 SYNOPSIS
 
 ./crate-docs.pl -b I<package>
 
+=head1 DESCRIPTION
+
+This script is an attempt to make a centralized documentation repository
+for crates released into crates.io. Script is using chroot environment to
+build documentation and fixing links on the fly.
+
 =head1 ARGS
 
 =over
 
-=item B<-b, --build-documentation> I<package>
+=item B<-b, --build-documentation> I<crate>
 
-Builds documentation of a package. If no package provided, script will
+Build documentation of a crate. If no crate name is provided, script will
 try to build documentation for all crates.
 
+=item B<-v, --version> I<version>
+
+Build documentation of package with given version. Otherwise script will
+try to build documentation for all versions.
+
+=item B<-h, --help>
+
+Show usage information and exit.
+
 =back
+
+=head1 INTERNAL METHODS
+
+=over
 
 =cut
 
 
 
+=pod
+
+=item run_(@cmd)
+
+Runs @cmd and returns: (full_output_buffer, success_status)
+
+=cut
 # FIXME: This is a sad function. I kept editing until I got this monster
 sub run_ {
     my $cmd = join(' ', @_);
@@ -397,7 +423,7 @@ sub build_doc_for_crate {
 sub main {
 
     my $help = sub {
-        pod2usage(-verbose  => 2,
+        pod2usage(-verbose  => 99,
                   -sections => [qw/SYNOPSIS ARGS/]);
     };
 
@@ -433,3 +459,26 @@ sub main {
 
 
 &main();
+
+=pod
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2016 Onur Aslan.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see L<http://www.gnu.org/licenses/>.
+
+=cut
