@@ -105,8 +105,10 @@ sub download_dependencies {
             my @wget_output = run_('wget', '-c', '--content-disposition',
                                    $url);
             msg($wget_output[0], 1);
-            die "Unable to download $crate from $url\n"
-                unless ($wget_output[1]);
+            unless ($wget_output[1]) {
+                error("Unable to download $crate");
+                return 0;
+            }
 
             # Extract crate into package root
             msg("Extracting $crate-$version.crate " .
@@ -125,10 +127,11 @@ sub download_dependencies {
             msg((run_('rm', '-v', "$crate-$version.crate"))[0], 1);
 
             # Check dependencies of downloaded crate
-            download_dependencies($package_root . "/$path");
+            return 0 unless download_dependencies($package_root . "/$path");
         }
     }
 
+    return 1;
 }
 
 
@@ -223,7 +226,10 @@ sub build_doc_for_version {
     msg("Downloading $crate-$version.crate", 1);
     my @wget_output = run_('wget', '-c', '--content-disposition', $url);
     msg($wget_output[0], 1);
-    die "Unable to download $crate from $url\n" unless ($wget_output[1]);
+    unless ($wget_output[1]) {
+        error("Unable to download $crate", 1);
+        return;
+    }
 
     # Extract crate file into build_home
     msg("Extracting $crate-$version.crate " .
