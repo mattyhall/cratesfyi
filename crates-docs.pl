@@ -467,8 +467,8 @@ build documentation and fixing links on the fly.
 =head2 PREPARING CHROOT ENVIRONMENT
 
 This script is using a chroot environment to build documentation. I don't
-think it was necessary but I didn't wanted add bunch of stuff to my stable
-server and a little bit more security doesn't hurt anyone.
+think it was necessary but I didn't wanted to add bunch of stuff to my
+stable server and a little bit more security doesn't hurt anyone.
 
 chroot environment must be placed in B<script_dir/chroot> directory. And
 you must install desired version of rustc inside chroot environment. Don't
@@ -478,7 +478,7 @@ same uid with your current user. You can change username of chroot user in
 $OPTIONS variable placed on top of this script. By default it is using
 I<onur>.
 
-You also need clone of crates.io-index respository. You can clone repository
+You also need clone crates.io-index respository. You can clone repository
 from L<https://github.com/rust-lang/crates.io-index>.
 
 This script is using I<sudo> to use chroot command. chroot is only command
