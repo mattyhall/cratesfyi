@@ -47,6 +47,11 @@ use Getopt::Long;
 use Pod::Usage;
 
 
+my %OPTIONS = (
+    'keep_build_directory' => 0
+);
+
+
 =pod
 
 =head1 NAME
@@ -235,6 +240,10 @@ sub build_doc_for_version {
 
     my $clean_package = sub {
 
+        if ($OPTIONS{keep_build_directory}) {
+            return;
+        }
+
         msg("Cleaning $crate-$version", 1);
         msg((run_('sudo', 'chroot', $FindBin::Bin . '/chroot',
                           'su', '-', 'onur',
@@ -400,6 +409,7 @@ sub main {
         'build-documentation|b@' => \$actions->{build_docs},
         '<>' => sub { push(@{$actions->{packages}}, $_[0]) },
         'version|v=s' => \$actions->{version},
+        'keep-build-directory' => \$OPTIONS{keep_build_directory},
         'help|h' => $help
     );
 
