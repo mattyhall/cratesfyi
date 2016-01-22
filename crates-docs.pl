@@ -78,6 +78,7 @@ sub run_ {
     debug("Running command: $cmd in " . cwd(), 1);
     my($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) =
             run(command => $cmd, verbose => 0);
+    $full_buf->[-1] =~ s/\n$//g if scalar(@{$full_buf});
     return (join("", @{$full_buf}), defined($success));
 }
 
