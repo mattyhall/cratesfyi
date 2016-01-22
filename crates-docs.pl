@@ -436,7 +436,7 @@ sub main {
         '<>' => sub { push(@{$actions->{packages}}, $_[0]) },
         'version|v=s' => \$actions->{version},
         'skip|s' => \$OPTIONS{skip_if_exists},
-        'keep-build-directory' => \$OPTIONS{keep_build_directory},
+        'keep-build-directory|k' => \$OPTIONS{keep_build_directory},
         'destination=s' => \$OPTIONS{destination},
         'chroot=s' => \$OPTIONS{chroot_path},
         'debug' => \$OPTIONS{debug},
@@ -545,7 +545,7 @@ I<-b> argument and a crate name.
 
 Skip generating if documentation is exist in destination directory.
 
-=item B<--keep-build-directory>
+=item B<-k, --keep-build-directory>
 
 Keep crate files in build directory after operation finishes.
 
