@@ -55,57 +55,7 @@ my %OPTIONS = (
 );
 
 
-=pod
 
-=head1 NAME
-
-create-docs.pl - L<https://crates.io> documentation generator
-
-=head1 SYNOPSIS
-
-./crate-docs.pl -b I<package>
-
-=head1 DESCRIPTION
-
-This script is an attempt to make a centralized documentation repository
-for crates released into crates.io. Script is using chroot environment to
-build documentation and fixing links on the fly.
-
-=head1 ARGS
-
-=over
-
-=item B<-b, --build-documentation> I<crate>
-
-Build documentation of a crate. If no crate name is provided, script will
-try to build documentation for all crates.
-
-=item B<-v, --version> I<version>
-
-Build documentation of package with given version. Otherwise script will
-try to build documentation for all versions.
-
-=item B<-h, --help>
-
-Show usage information and exit.
-
-=back
-
-=head1 INTERNAL METHODS
-
-=over
-
-=cut
-
-
-
-=pod
-
-=item run_(@cmd)
-
-Runs @cmd and returns: (full_output_buffer, success_status)
-
-=cut
 # FIXME: This is a sad function. I kept editing until I got this monster
 sub run_ {
     my $cmd = join(' ', @_);
@@ -395,8 +345,6 @@ sub build_doc_for_crate {
         close $fh;
 
 
-
-
         my $found = 0;
         for (reverse(@versions)) {
             if (defined($requested_version)) {
@@ -460,7 +408,59 @@ sub main {
 
 &main();
 
-=pod
+0;
+
+=head1 NAME
+
+creates-docs.pl - L<https://crates.io> documentation generator
+
+=head1 SYNOPSIS
+
+./crates-docs.pl -b I<package>
+
+=head1 DESCRIPTION
+
+This script is an attempt to make a centralized documentation repository
+for crates released into crates.io. Script is using chroot environment to
+build documentation and fixing links on the fly.
+
+=head1 ARGS
+
+=over
+
+=item B<-b, --build-documentation> I<crate>
+
+Build documentation of a crate. If no crate name is provided, script will
+try to build documentation for all crates.
+
+=item B<-v, --version> I<version>
+
+Build documentation of a crate with given version. Otherwise script will
+try to build documentation for all versions. This option must be used with
+I<-b> argument and a crate name.
+
+=item B<--keep-build-directory>
+
+Keep crate files in build directory after operation finishes.
+
+=item B<--destination> I<path>
+
+Destination path. Generated documentation directories will be moved to this
+directory. Default value: I<script_dir/public_html/crates>
+
+=item B<--chroot> I<path>
+
+Chroot path. Default value: I<script_dir/chroot>
+
+=item B<--debug>
+
+Show debug messages and place debug info in logs.
+
+=item B<-h, --help>
+
+Show usage information and exit.
+
+=cut
 
 =back
 
