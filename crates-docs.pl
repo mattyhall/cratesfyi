@@ -432,7 +432,7 @@ sub main {
     };
 
     GetOptions(
-        'build-documentation|b@' => \$actions->{build_docs},
+        'build-documentation|b' => \$actions->{build_docs},
         '<>' => sub { push(@{$actions->{packages}}, $_[0]) },
         'version|v=s' => \$actions->{version},
         'skip|s' => \$OPTIONS{skip_if_exists},
