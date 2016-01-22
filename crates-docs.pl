@@ -51,6 +51,10 @@ my %OPTIONS = (
     'keep_build_directory' => 0,
     'destination' => $FindBin::Bin . '/public_html/crates',
     'chroot_path' => $FindBin::Bin . '/chroot',
+    'chroot_user' => 'onur',
+    'chroot_user_home_dir' => '/home/onur',
+    'crates_io_index_path' => $FindBin::Bin . '/crates.io-index',
+    'logs_path' => $FindBin::Bin . '/logs',
     'skip_if_exists' => 0,
     'debug' => 0,
 );
@@ -87,7 +91,7 @@ sub get_latest_version {
         close $fh;
     };
 
-    find($wanted, $FindBin::Bin . '/crates.io-index');
+    find($wanted, $OPTIONS{crates_io_index_path});
 
     return $latest_version;
 }
@@ -216,8 +220,8 @@ sub build_doc_for_version {
     }
 
     # Opening log file
-    make_path($FindBin::Bin . "/logs/$crate");
-    open my $logfh, '>' . $FindBin::Bin . "/logs/$crate/$crate-$version.log";
+    make_path($OPTIONS{logs_path} . "/$crate");
+    open my $logfh, '>' . $OPTIONS{logs_path} . "/$crate/$crate-$version.log";
     local $Log::Message::Simple::MSG_FH = \*$logfh;
     local $Log::Message::Simple::ERROR_FH = \*$logfh;
     local $Log::Message::Simple::DEBUG_FH = \*$logfh;
@@ -233,9 +237,9 @@ sub build_doc_for_version {
 
         msg("Cleaning $crate-$version", 1);
         msg((run_('sudo', 'chroot', $OPTIONS{chroot_path},
-                          'su', '-', 'onur',
-                          '/home/onur/.build.sh', 'clean',
-                          "$crate-$version"))[0], 1);
+                          'su', '-', $OPTIONS{chroot_user},
+                          $OPTIONS{chroot_user_home_dir} . '/.build.sh',
+                          'clean', "$crate-$version"))[0], 1);
 
         msg("Removing $crate-$version build directory", 1);
         msg((run_('rm', '-rf',
@@ -280,8 +284,9 @@ sub build_doc_for_version {
     msg("Running cargo doc --no-deps", 1);
 
     my @build_output = run_('sudo', 'chroot', $OPTIONS{chroot_path},
-                            'su', '-', 'onur',
-                            '/home/onur/.build.sh', 'build', "$crate-$version");
+                            'su', '-', $OPTIONS{chroot_user},
+                            $OPTIONS{chroot_user_home_dir} . '/.build.sh',
+                            'build', "$crate-$version");
     msg($build_output[0], 1);
     unless ($build_output[1]) {
         error("Building documentation for $crate-$version failed", 1);
