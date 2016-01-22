@@ -51,6 +51,7 @@ my %OPTIONS = (
     'keep_build_directory' => 0,
     'destination' => $FindBin::Bin . '/public_html/crates',
     'chroot_path' => $FindBin::Bin . '/chroot',
+    'skip_if_exists' => 0,
     'debug' => 0,
 );
 
@@ -206,6 +207,13 @@ sub copy_doc {
 
 sub build_doc_for_version {
     my ($crate, $version) = @_;
+
+    if ($OPTIONS{skip_if_exists} &&
+        -d $OPTIONS{destination} . '/' . $crate . '/' . $version) {
+        print "Skipping $crate-$version documentation is already exist in: ",
+              $OPTIONS{destination} . '/' . $crate . '/' . $version . "\n";
+        return;
+    }
 
     # Opening log file
     make_path($FindBin::Bin . "/logs/$crate");
@@ -385,6 +393,7 @@ sub main {
         'build-documentation|b@' => \$actions->{build_docs},
         '<>' => sub { push(@{$actions->{packages}}, $_[0]) },
         'version|v=s' => \$actions->{version},
+        'skip|s' => \$OPTIONS{skip_if_exists},
         'keep-build-directory' => \$OPTIONS{keep_build_directory},
         'destination=s' => \$OPTIONS{destination},
         'chroot=s' => \$OPTIONS{chroot_path},
@@ -438,6 +447,10 @@ try to build documentation for all crates.
 Build documentation of a crate with given version. Otherwise script will
 try to build documentation for all versions. This option must be used with
 I<-b> argument and a crate name.
+
+=item B<-s, --skip>
+
+Skip generating if documentation is exist in destination directory.
 
 =item B<--keep-build-directory>
 
