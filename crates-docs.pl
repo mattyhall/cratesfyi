@@ -83,6 +83,31 @@ sub run_ {
 }
 
 
+# Get latest version of a crate
+# Some crates are pointing to * version.
+# We need to find out which version is latest for given crate.
+sub get_latest_version {
+    my $crate = $_[0];
+    my $latest_version;
+
+    my $wanted = sub {
+        return unless -f $_;
+        return unless $_ eq $crate;
+
+        open (my $fh, $_);
+        while (<$fh>) {
+            my $version_info = decode_json($_);
+            $latest_version = $version_info->{vers};
+        }
+        close $fh;
+    };
+
+    find($wanted, $FindBin::Bin . '/crates.io-index');
+
+    return $latest_version;
+}
+
+
 # Some deps needs to be downloaded manually
 # This deps are defined with a path in Cargo.toml
 sub download_dependencies {
@@ -97,8 +122,10 @@ sub download_dependencies {
             defined($toml->{dependencies}->{$_}->{path})) {
 
             my $crate = $_;
-            my $version = $toml->{dependencies}->{$_}->{version};
             my $path = $toml->{dependencies}->{$_}->{'path'};
+            my $version = $toml->{dependencies}->{$_}->{version};
+
+            $version = get_latest_version($crate) if ($version eq '*');
 
             msg("Downloading dependency $crate-$version", 1);
             my $url = "https://crates-io.s3-us-west-1.amazonaws.com/crates/" .
@@ -120,9 +147,15 @@ sub download_dependencies {
 
             # Move crate into right place
             msg("Moving crate into $path", 1);
-            msg((run_('mv', '-v',
-                      $package_root . "/$crate-$version",
-                      $package_root . "/$path"))[0], 1);
+            if ($path eq '..') {
+                msg((run_('mv', '-v',
+                          $package_root . "/$crate-$version/*",
+                          $package_root . "/$path"))[0], 1);
+            } else {
+                msg((run_('mv', '-v',
+                          $package_root . "/$crate-$version",
+                          $package_root . "/$path"))[0], 1);
+            }
 
             msg("Removing $crate-$version.crate", 1);
             msg((run_('rm', '-v', "$crate-$version.crate"))[0], 1);
@@ -205,12 +238,18 @@ sub build_doc_for_version {
         msg("Cleaning $crate-$version", 1);
         msg((run_('sudo', 'chroot', $FindBin::Bin . '/chroot',
                           'su', '-', 'onur',
-                          '/home/onur/build.sh', 'clean',
+                          '/home/onur/.build.sh', 'clean',
                           "$crate-$version"))[0], 1);
 
         msg("Removing $crate-$version build directory", 1);
         msg((run_('rm', '-rf',
                         $FindBin::Bin . "/build_home/$crate-$version"))[0], 1);
+
+        # Some packages are moving stuff into build_home directory
+        # I think its better to clean up everything in home directory
+        msg("Cleaning build_home", 1);
+        msg((run_('rm', '-rf',
+                        $FindBin::Bin . "/build_home/*"))[0], 1);
 
         msg("Removing crate file $crate-$version.crate", 1);
         msg((run_('rm', '-fv', "$crate-$version.crate"))[0], 1);
@@ -247,7 +286,7 @@ sub build_doc_for_version {
 
     my @build_output = run_('sudo', 'chroot', $FindBin::Bin . '/chroot',
                             'su', '-', 'onur',
-                            '/home/onur/build.sh', 'build', "$crate-$version");
+                            '/home/onur/.build.sh', 'build', "$crate-$version");
     msg($build_output[0], 1);
     unless ($build_output[1]) {
         error("Building documentation for $crate-$version failed", 1);
