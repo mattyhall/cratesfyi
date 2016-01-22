@@ -19,16 +19,16 @@
 
 
 # TODO:
-# * Don't die if download fails
-# * Some of the local dependency crates are using asterix for version.
-#   I need to get latest version of crate.
 # * bindgen crate failed to build because there was no libclang.so
 #   available.
 # * Left column is not visible on crate index. No idea why. Need to fix
 #   this.
 # * This script is becoming hard to maintain. Need more comments in base
 #   functions.
-# * Add global options for prefix and log folder.
+# * check nanny crate, script died
+# * Add jobs option to run this script parallel Parallel::ForkManager
+#   is what I need
+# * List dependencies of this script in somewhere
 
 
 use strict;
@@ -377,6 +377,19 @@ sub build_doc_for_crate {
     };
 
     find($wanted, 'crates.io-index');
+
+}
+
+
+# Update crates.io-index and try to build new packages
+# TODO:
+# * Run git fetch inside crates.io-index
+# * Get diff with git diff
+# * '^\+{' packages are new packages
+# * Try to build this packages
+# * If everything goes well sync crates.io-index with git pull
+sub update {
+
 
 }
 
