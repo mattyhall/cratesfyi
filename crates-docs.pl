@@ -435,8 +435,55 @@ creates-docs.pl - L<https://crates.io> documentation generator
 =head1 DESCRIPTION
 
 This script is an attempt to make a centralized documentation repository
-for crates released into crates.io. Script is using chroot environment to
+for crates available in crates.io. Script is using chroot environment to
 build documentation and fixing links on the fly.
+
+=head2 PREPARING CHROOT ENVIRONMENT
+
+This script is using a chroot environment to build documentation. I don't
+think it was necessary but I didn't wanted add bunch of stuff to my stable
+server and a little bit more security doesn't hurt anyone.
+
+chroot environment must be placed in B<script_dir/chroot> directory. And
+you must install desired version of rustc inside chroot environment. Don't
+forget to add a regular user and create a link named B<build_home> which is
+pointing to chroot user's home directory.  Make sure regular user is using
+same uid with your current user. You can change username of chroot user in
+$OPTIONS variable placed on top of this script. By default it is using
+I<onur>.
+
+You also need clone of crates.io-index respository. You can clone repository
+from L<https://github.com/rust-lang/crates.io-index>.
+
+This script is using I<sudo> to use chroot command. chroot is only command
+called by sudo in this script. Make sure user has rights to call chroot
+command with sudo.
+
+And lastly you need to copy build.sh script into users home directory with
+B<.build.sh> name. Make sure chroot user has permissions to execute
+B<.build.sh> script.
+
+Directory structure should look like this:
+
+  .
+  ├── crates-docs.pl                  # This script
+  ├── build_home -> chroot/home/onur  # Sym link to chroot user's home
+  ├── chroot                          # chroot environment
+  │   ├── bin
+  │   ├── etc
+  │   ├── home
+  │   │   └── onur                    # chroot user's home directory
+  │   │       └── .build.sh           # Build script to run cargo doc
+  │   └── ...
+  ├── crates.io-index                 # Clone of crates.io-index
+  │   ├── 1
+  │   ├── 2
+  │   └── ...
+  ├── logs                            # Build logs will be placed here
+  │   └── ...
+  └── public_html
+      └── crates                      # Documentations will be placed here
+
 
 =head1 ARGS
 
@@ -464,11 +511,11 @@ Keep crate files in build directory after operation finishes.
 =item B<--destination> I<path>
 
 Destination path. Generated documentation directories will be moved to this
-directory. Default value: I<script_dir/public_html/crates>
+directory. Default value: B<script_dir/public_html/crates>
 
 =item B<--chroot> I<path>
 
-Chroot path. Default value: I<script_dir/chroot>
+Chroot path. Default value: B<script_dir/chroot>
 
 =item B<--debug>
 
