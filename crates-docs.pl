@@ -50,6 +50,7 @@ use Pod::Usage;
 my %OPTIONS = (
     'keep_build_directory' => 0,
     'destination' => $FindBin::Bin . '/public_html/crates',
+    'chroot_path' => $FindBin::Bin . '/chroot',
 );
 
 
@@ -246,7 +247,7 @@ sub build_doc_for_version {
         }
 
         msg("Cleaning $crate-$version", 1);
-        msg((run_('sudo', 'chroot', $FindBin::Bin . '/chroot',
+        msg((run_('sudo', 'chroot', $OPTIONS{chroot_path},
                           'su', '-', 'onur',
                           '/home/onur/.build.sh', 'clean',
                           "$crate-$version"))[0], 1);
@@ -291,10 +292,9 @@ sub build_doc_for_version {
     download_dependencies($FindBin::Bin . '/build_home/' . "$crate-$version");
 
     # Build file
-    msg("Running cargo doc --no-deps in " .
-        "chroot:/home/onur/$crate-$version", 1);
+    msg("Running cargo doc --no-deps", 1);
 
-    my @build_output = run_('sudo', 'chroot', $FindBin::Bin . '/chroot',
+    my @build_output = run_('sudo', 'chroot', $OPTIONS{chroot_path},
                             'su', '-', 'onur',
                             '/home/onur/.build.sh', 'build', "$crate-$version");
     msg($build_output[0], 1);
@@ -410,6 +410,8 @@ sub main {
         '<>' => sub { push(@{$actions->{packages}}, $_[0]) },
         'version|v=s' => \$actions->{version},
         'keep-build-directory' => \$OPTIONS{keep_build_directory},
+        'destination=s' => \$OPTIONS{destination},
+        'chroot=s' => \$OPTIONS{chroot_path},
         'help|h' => $help
     );
 
