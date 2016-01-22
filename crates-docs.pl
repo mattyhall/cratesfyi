@@ -48,7 +48,8 @@ use Pod::Usage;
 
 
 my %OPTIONS = (
-    'keep_build_directory' => 0
+    'keep_build_directory' => 0,
+    'destination' => $FindBin::Bin . '/public_html/crates',
 );
 
 
@@ -306,30 +307,29 @@ sub build_doc_for_version {
     # If everything goes fine move generated documentation into public_html
 
     # Remove old documentation for same version just in case
-    debug("Removing old documentation in public_html/crates", 1);
+    debug('Removing old documentation in ' . $OPTIONS{destination} . '/', 1);
     msg((run_('rm', '-rf',
-             $FindBin::Bin . '/public_html/crates/' .
-             $crate . '/' . $version))[0], 1);
+              $OPTIONS{destination} . '/' .
+              $crate . '/' . $version))[0], 1);
 
-    make_path($FindBin::Bin . '/public_html/crates/' . $crate . '/' . $version);
+    make_path($OPTIONS{destination} . '/' . $crate . '/' . $version);
 
     msg("Moving documentation into: " .
-        $FindBin::Bin . '/public_html/crates/' .
+        $OPTIONS{destination} . '/' .
         $crate . '/' . $version, 1);
     my $crate_dname = $crate; $crate_dname =~ s/-/_/g;
     copy_doc($FindBin::Bin .
                 "/build_home/$crate-$version/target/doc/$crate_dname",
-             $FindBin::Bin . '/public_html/crates/' . $crate . '/' . $version);
+             $OPTIONS{destination} . '/' . $crate . '/' . $version);
     # Copy source as well
     # FIXME: 80+
     copy_doc($FindBin::Bin . "/build_home/$crate-$version/target/doc/src/$crate_dname",
-             $FindBin::Bin . '/public_html/crates/' . $crate . '/' . $version . '/src');
+             $OPTIONS{destination} . '/' . $crate . '/' . $version . '/src');
     # and copy search-index.js
     msg((run_('cp', '-v',
               $FindBin::Bin . "/build_home/$crate-$version" .
               "/target/doc/search-index.js",
-              $FindBin::Bin . '/public_html/crates/' .
-              $crate . '/' . $version))[0], 1);
+              $OPTIONS{destination} . '/' . $crate . '/' . $version))[0], 1);
 
     $clean_package->();
 
