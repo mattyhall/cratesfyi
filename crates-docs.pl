@@ -51,6 +51,7 @@ my %OPTIONS = (
     'keep_build_directory' => 0,
     'destination' => $FindBin::Bin . '/public_html/crates',
     'chroot_path' => $FindBin::Bin . '/chroot',
+    'debug' => 0,
 );
 
 
@@ -82,7 +83,7 @@ try to build documentation for all crates.
 # FIXME: This is a sad function. I kept editing until I got this monster
 sub run_ {
     my $cmd = join(' ', @_);
-    debug("Running command: $cmd in " . cwd(), 1);
+    debug("Running command: $cmd in " . cwd(), $OPTIONS{debug});
     my($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) =
             run(command => $cmd, verbose => 0);
     $full_buf->[-1] =~ s/\n$//g if scalar(@{$full_buf});
@@ -307,7 +308,8 @@ sub build_doc_for_version {
     # If everything goes fine move generated documentation into public_html
 
     # Remove old documentation for same version just in case
-    debug('Removing old documentation in ' . $OPTIONS{destination} . '/', 1);
+    debug('Removing old documentation in ' . $OPTIONS{destination} . '/',
+          $OPTIONS{debug});
     msg((run_('rm', '-rf',
               $OPTIONS{destination} . '/' .
               $crate . '/' . $version))[0], 1);
@@ -412,6 +414,7 @@ sub main {
         'keep-build-directory' => \$OPTIONS{keep_build_directory},
         'destination=s' => \$OPTIONS{destination},
         'chroot=s' => \$OPTIONS{chroot_path},
+        'debug' => \$OPTIONS{debug},
         'help|h' => $help
     );
 
