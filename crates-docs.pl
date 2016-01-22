@@ -41,10 +41,10 @@ use JSON;
 use File::Slurp;
 use TOML qw/from_toml/;
 use Log::Message::Simple qw/msg error debug/;
-use Data::Dumper;
-use Cwd;
+use Cwd qw/cwd abs_path/;
 use Getopt::Long;
 use Pod::Usage;
+use Data::Dumper;
 
 
 my %OPTIONS = (
@@ -381,6 +381,30 @@ sub build_doc_for_crate {
 }
 
 
+sub check_prerequisities {
+    my @error = ();
+
+    # convert options to abs paths
+    for ('destination',
+         'chroot_path',
+         'chroot_user_home_dir',
+         'crates_io_index_path',
+         'logs_path') {
+         $OPTIONS{$_} = abs_path($OPTIONS{$_});
+    }
+
+    push @error, 'chroot path doesn\'t exist' unless -e $OPTIONS{chroot_path};
+    push @error, 'chroot user home directory doesn\'t exist'
+        unless -e abs_path($OPTIONS{chroot_path} . '/' .
+                           $OPTIONS{chroot_user_home_dir});
+    push @error, 'crates.io-index doesn\'t exist'
+        unless -e $OPTIONS{crates_io_index_path};
+
+    error($_, 1) for (@error);
+    return scalar(@error);
+}
+
+
 sub main {
 
     my $help = sub {
@@ -405,6 +429,8 @@ sub main {
         'debug' => \$OPTIONS{debug},
         'help|h' => $help
     );
+
+    return if (check_prerequisities());
 
     if ($actions->{build_docs}) {
         if (scalar(@{$actions->{packages}})) {
