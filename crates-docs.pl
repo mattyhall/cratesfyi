@@ -101,6 +101,10 @@ sub get_latest_version {
 # This deps are defined with a path in Cargo.toml
 sub download_dependencies {
     my $package_root = $_[0];
+
+    return error("Cargo.toml not found in $package_root", 1)
+        unless (-e $package_root . '/Cargo.toml');
+
     my $toml_content = read_file($package_root . '/Cargo.toml');
     my $toml = from_toml($toml_content);
 
