@@ -143,15 +143,11 @@ sub download_dependencies {
 
             # Move crate into right place
             msg("Moving crate into $path", 1);
-            if ($path eq '..') {
-                msg((run_('mv', '-v',
-                          $package_root . "/$crate-$version/*",
-                          $package_root . "/$path"))[0], 1);
-            } else {
-                msg((run_('mv', '-v',
-                          $package_root . "/$crate-$version",
-                          $package_root . "/$path"))[0], 1);
-            }
+            make_path($package_root . "/$path")
+                unless -e $package_root . "/$path";
+            msg((run_('mv', '-v',
+                      $package_root . "/$crate-$version/*",
+                      $package_root . "/$path"))[0], 1);
 
             msg("Removing $crate-$version.crate", 1);
             msg((run_('rm', '-v', "$crate-$version.crate"))[0], 1);
