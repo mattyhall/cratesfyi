@@ -281,6 +281,14 @@ sub build_doc_for_version {
 
     };
 
+    # Remove old build directory if it exists
+    # FIXME: This is sort of code repeat
+    if (!$OPTIONS{keep_build_directory} &&
+        -e $FindBin::Bin . "/build_home/$crate-$version") {
+        msg("Removing old build directory for $crate-$version", 1);
+        run_('rm', '-rf',
+                   $FindBin::Bin . "/build_home/$crate-$version");
+    }
 
     # Default crate url is:
     # https://crates.io/api/v1/crates/$crate/$version/download
