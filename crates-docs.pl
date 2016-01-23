@@ -323,9 +323,9 @@ sub build_doc_for_version {
     # Remove old documentation for same version just in case
     debug('Removing old documentation in ' . $OPTIONS{destination} . '/',
           $OPTIONS{debug});
-    msg((run_('rm', '-rf',
-              $OPTIONS{destination} . '/' .
-              $crate . '/' . $version))[0], 1);
+    run_('rm', '-rf',
+         $OPTIONS{destination} . '/' .
+         $crate . '/' . $version);
 
     # Try to find lib name
     my $lib_name = find_lib_name($FindBin::Bin .
