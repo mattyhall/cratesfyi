@@ -315,8 +315,7 @@ sub build_doc_for_version {
     msg($build_output[0], 1);
     unless ($build_output[1]) {
         error("Building documentation for $crate-$version failed", 1);
-        $clean_package->();
-        return;
+        return $clean_package->();
     }
 
     # If everything goes fine move generated documentation into public_html
@@ -328,12 +327,6 @@ sub build_doc_for_version {
               $OPTIONS{destination} . '/' .
               $crate . '/' . $version))[0], 1);
 
-    make_path($OPTIONS{destination} . '/' . $crate . '/' . $version);
-
-    msg("Moving documentation into: " .
-        $OPTIONS{destination} . '/' .
-        $crate . '/' . $version, 1);
-
     # Try to find lib name
     my $lib_name = find_lib_name($FindBin::Bin .
                                  "/build_home/$crate-$version");
@@ -344,6 +337,19 @@ sub build_doc_for_version {
         $lib_name =~ s/-/_/g;
     }
 
+
+    msg("Moving documentation into: " .
+        $OPTIONS{destination} . '/' .
+        $crate . '/' . $version, 1);
+
+    # Check any documentation available for crate
+    unless (-e $FindBin::Bin .
+               "/build_home/$crate-$version/target/doc/$lib_name") {
+        msg("No documentation found for $crate-$version", 1);
+        return $clean_package->();
+    }
+
+    make_path($OPTIONS{destination} . '/' . $crate . '/' . $version);
     copy_doc($FindBin::Bin .
                 "/build_home/$crate-$version/target/doc/$lib_name",
              $OPTIONS{destination} . '/' . $crate . '/' . $version);
