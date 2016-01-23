@@ -69,7 +69,9 @@ sub run_ {
     my($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) =
             run(command => $cmd, verbose => 0);
     $full_buf->[-1] =~ s/\n$//g if scalar(@{$full_buf});
-    return (join("", @{$full_buf}), defined($success));
+    my $output = join("", @{$full_buf});
+    debug($output, $OPTIONS{debug});
+    return ($output, defined($success));
 }
 
 
