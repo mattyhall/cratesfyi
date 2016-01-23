@@ -211,6 +211,17 @@ sub copy_doc {
 }
 
 
+# This function is just printing rustc and cargo versions
+# in chroot environment. Might be useful for debugging.
+sub versions {
+    my @commands = ('rustc --version', 'cargo --version');
+    msg(run_('sudo', 'chroot', $OPTIONS{chroot_path},
+                     'su', '-', $OPTIONS{chroot_user},
+                     '-c \'' . $_ . '\''))
+        for (@commands);
+}
+
+
 # Some crates are using different library name than crate name
 # This function is looking [lib] in Cargo.toml and if it founds
 # Returning lib name
@@ -253,6 +264,17 @@ sub build_doc_for_version {
 
     print "Building documentation for: $crate-$version\n";
     msg("Building documentation for: $crate-$version", 1);
+
+    # Log rustc and cargo version info
+    versions();
+
+    my $env_versions = sub {
+        run_('sudo', 'chroot', $OPTIONS{chroot_path},
+                     'su', '-', $OPTIONS{chroot_user},
+                     $OPTIONS{chroot_user_home_dir} . '/.build.sh',
+                     'clean', "$crate-$version");
+    };
+
 
     my $clean_package = sub {
 
