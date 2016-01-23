@@ -211,6 +211,21 @@ sub copy_doc {
 }
 
 
+# Some crates are using different library name than crate name
+# This function is looking [lib] in Cargo.toml and if it founds
+# Returning lib name
+sub find_lib_name {
+    my $package_root = $_[0];
+
+    return unless (-e $package_root . '/Cargo.toml');
+    my $toml_content = read_file($package_root . '/Cargo.toml');
+    my $toml = from_toml($toml_content);
+
+    if (defined($toml->{lib}) && defined($toml->{lib}->{name})) {
+        return $toml->{lib}->{name};
+    }
+}
+
 
 sub build_doc_for_version {
     my ($crate, $version) = @_;
@@ -318,13 +333,23 @@ sub build_doc_for_version {
     msg("Moving documentation into: " .
         $OPTIONS{destination} . '/' .
         $crate . '/' . $version, 1);
-    my $crate_dname = $crate; $crate_dname =~ s/-/_/g;
+
+    # Try to find lib name
+    my $lib_name = find_lib_name($FindBin::Bin .
+                                 "/build_home/$crate-$version");
+
+    # Use crate name if there is no [lib] available in Cargo.toml
+    unless ($lib_name) {
+        $lib_name = $crate;
+        $lib_name =~ s/-/_/g;
+    }
+
     copy_doc($FindBin::Bin .
-                "/build_home/$crate-$version/target/doc/$crate_dname",
+                "/build_home/$crate-$version/target/doc/$lib_name",
              $OPTIONS{destination} . '/' . $crate . '/' . $version);
     # Copy source as well
-    # FIXME: 80+
-    copy_doc($FindBin::Bin . "/build_home/$crate-$version/target/doc/src/$crate_dname",
+    copy_doc($FindBin::Bin .
+                "/build_home/$crate-$version/target/doc/src/$lib_name",
              $OPTIONS{destination} . '/' . $crate . '/' . $version . '/src');
     # and copy search-index.js
     msg((run_('cp', '-v',
