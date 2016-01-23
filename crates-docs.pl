@@ -261,10 +261,10 @@ sub build_doc_for_version {
         }
 
         msg("Cleaning $crate-$version", 1);
-        msg((run_('sudo', 'chroot', $OPTIONS{chroot_path},
-                          'su', '-', $OPTIONS{chroot_user},
-                          $OPTIONS{chroot_user_home_dir} . '/.build.sh',
-                          'clean', "$crate-$version"))[0], 1);
+        run_('sudo', 'chroot', $OPTIONS{chroot_path},
+                     'su', '-', $OPTIONS{chroot_user},
+                     $OPTIONS{chroot_user_home_dir} . '/.build.sh',
+                     'clean', "$crate-$version");
 
         msg("Removing $crate-$version build directory", 1);
         run_('rm', '-rf',
