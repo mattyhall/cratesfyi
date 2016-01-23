@@ -254,14 +254,14 @@ sub build_doc_for_version {
                           'clean', "$crate-$version"))[0], 1);
 
         msg("Removing $crate-$version build directory", 1);
-        msg((run_('rm', '-rf',
-                        $FindBin::Bin . "/build_home/$crate-$version"))[0], 1);
+        run_('rm', '-rf',
+                   $FindBin::Bin . "/build_home/$crate-$version");
 
         # Some packages are moving stuff into build_home directory
         # I think its better to clean up everything in home directory
         msg("Cleaning build_home", 1);
-        msg((run_('rm', '-rf',
-                        $FindBin::Bin . "/build_home/*"))[0], 1);
+        run_('rm', '-rf',
+                   $FindBin::Bin . "/build_home/*");
 
         msg("Removing crate file $crate-$version.crate", 1);
         msg((run_('rm', '-fv', "$crate-$version.crate"))[0], 1);
