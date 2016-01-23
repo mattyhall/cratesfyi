@@ -56,6 +56,7 @@ my %OPTIONS = (
     'crates_io_index_path' => $FindBin::Bin . '/crates.io-index',
     'logs_path' => $FindBin::Bin . '/logs',
     'skip_if_exists' => 0,
+    'skip_if_log_exists' => 0,
     'debug' => 0,
 );
 
@@ -220,6 +221,13 @@ sub build_doc_for_version {
         -d $OPTIONS{destination} . '/' . $crate . '/' . $version) {
         print "Skipping $crate-$version documentation is already exist in: ",
               $OPTIONS{destination} . '/' . $crate . '/' . $version . "\n";
+        return;
+    }
+
+    if ($OPTIONS{skip_if_log_exists} &&
+        -e $OPTIONS{logs_path} . "/$crate/$crate-$version.log") {
+        print "Skipping $crate-$version log file is available in: ",
+               $OPTIONS{logs_path} . "/$crate/$crate-$version.log\n";
         return;
     }
 
@@ -440,6 +448,7 @@ sub main {
         '<>' => sub { push(@{$actions->{packages}}, $_[0]) },
         'version|v=s' => \$actions->{version},
         'skip|s' => \$OPTIONS{skip_if_exists},
+        'skip-tried' => \$OPTIONS{skip_if_log_exists},
         'keep-build-directory|k' => \$OPTIONS{keep_build_directory},
         'destination=s' => \$OPTIONS{destination},
         'chroot=s' => \$OPTIONS{chroot_path},
@@ -548,6 +557,11 @@ I<-b> argument and a crate name.
 =item B<-s, --skip>
 
 Skip generating if documentation is exist in destination directory.
+
+=item B<--skip-tried>
+
+Skips generating documentation if it's already tried before and log file is
+available for crate in logs directory.
 
 =item B<-k, --keep-build-directory>
 
