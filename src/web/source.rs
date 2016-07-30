@@ -26,6 +26,7 @@ enum FileType {
 struct File {
     name: String,
     file_type: FileType,
+    selected: bool,
 }
 
 
@@ -55,6 +56,7 @@ impl ToJson for FileList {
                           },
                           true.to_json());
 
+            file_m.insert("selected".to_string(), file.selected.to_json());
             file_vec.push(file_m.to_json());
         }
 
@@ -85,7 +87,8 @@ impl FileList {
     pub fn from_path(conn: &Connection,
                      name: &str,
                      version: &str,
-                     req_path: &str)
+                     req_path: &str,
+                     file_req_path: &str)
                      -> Option<FileList> {
 
         let rows = conn.query("SELECT crates.name,
@@ -121,6 +124,9 @@ impl FileList {
 
                     // look only files for req_path
                     if path.starts_with(&req_path) {
+                        debug!("file_req_path: {}, path: {}", file_req_path, path);
+                        let selected = path == file_req_path;
+
                         // remove req_path from path to reach files in this directory
                         let path = path.replace(&req_path, "");
                         let path_splited: Vec<&str> = path.split("/").collect();
@@ -140,6 +146,7 @@ impl FileList {
                         let file = File {
                             name: path_splited[0].to_owned(),
                             file_type: ftype,
+                            selected: selected,
                         };
 
                         // avoid adding duplicates, a directory may occur more than once
@@ -185,10 +192,11 @@ pub fn source_browser_handler(req: &mut Request) -> IronResult<Response> {
     let version = req.extensions.get::<Router>().unwrap().find("version").unwrap();
 
     // get path (req_path) for FileList::from_path and actual path for super::file::File::from_path
-    let (req_path, file_path) = {
+    let (file_req_path, req_path, file_path) = {
         let mut req_path = req.url.path.clone();
         // remove first element from path which is /source
         req_path.remove(0);
+        let file_req_path = req_path.clone();
         let file_path = format!("sources/{}", req_path.join("/"));
 
         // FileList::from_path is only working for directories
@@ -200,9 +208,10 @@ pub fn source_browser_handler(req: &mut Request) -> IronResult<Response> {
         });
 
         // remove crate name and version from req_path
+        let file_req_path = file_req_path.join("/").replace(&format!("{}/{}/", name, version), "");
         let path = req_path.join("/").replace(&format!("{}/{}/", name, version), "");
 
-        (path, file_path)
+        (file_req_path, path, file_path)
     };
 
 
@@ -230,13 +239,14 @@ pub fn source_browser_handler(req: &mut Request) -> IronResult<Response> {
         (None, false)
     };
 
-    let list = FileList::from_path(&conn, &name, &version, &req_path);
+    let list = FileList::from_path(&conn, &name, &version, &req_path, &file_req_path);
 
     let page = Page::new(list)
                    .set_bool("show_parent_link", !req_path.is_empty())
                    .set_true("javascript_highlightjs")
                    .set_true("show_package_navigation")
-                   .set_true("package_source_tab");
+                   .set_true("package_source_tab")
+                   .set("req_path", &req_path);
 
     if let Some(content) = content {
         page.set("file_content", &content)

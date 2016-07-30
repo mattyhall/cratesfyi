@@ -309,6 +309,10 @@ div.package-page-container {
             background-color: $color-background-code;
         }
 
+        li.pure-menu-item-selected {
+            background-color: $color-background-code;
+        }
+
         div.sub-menu {
             max-height: 135px;
             overflow-y: auto;
